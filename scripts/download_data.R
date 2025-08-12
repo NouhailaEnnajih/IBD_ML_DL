@@ -2,10 +2,10 @@ library(processx)
 library(httr)
 #Put your data here
 
-srrs <- readLines("C:/Users/YLS/Documents/autismMLandDL/accessionsData261.txt")
+srrs <- readLines("C:/Users/YLS/Documents/IBD1359/accessionsDataIBD1359.txt")
 
 #put your output directory here
-output_dir <- "C:/Users/YLS/Documents/autismMLandDL/data_261"
+output_dir <- "C:/Users/YLS/Documents/IBD1359/data_IBD1359"
 
 #if not already created, it will be
 
@@ -37,6 +37,7 @@ for (sra_id in srrs) {
     download.file(full_url, dest_file, mode = "wb")
   }
 }
+
 
 
 
