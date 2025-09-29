@@ -14,10 +14,10 @@ This repository provides a pipeline for benchmarking machine learning (ML) and d
 
 ## Contents
 
-- **Data download scripts**: Fetch raw sequence data from public databases using accession numbers.  
-- **DADA2 pipeline**: Process raw sequences into taxa tables.  
-- **Taxa renaming script**: Standardize taxa names for downstream analysis.  
-- **ML/DL analysis script and notebook**: Train and evaluate models using the processed taxa tables.
+- **1_download_data.R**: Fetch raw sequence data from public databases using accession numbers.  
+- **2_dada2.R**: Process raw sequences into taxa tables.  
+- **3_renaming_taxa.R**: Standardize taxa names for downstream analysis.  
+- **ML and DL models.ipynb** and **ML and DL models.py**: Train and evaluate models using the processed taxa tables.
 
 ## Notes
 
