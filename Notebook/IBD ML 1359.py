@@ -420,32 +420,32 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from imblearn.over_sampling import SMOTE
 
-# 1. Charger les jeux de données déjà nettoyés
+# 1. Loading preprocessed data
 train_df = pd.read_csv("C:/Users/YLS/Documents/clean_train.csv")
 test_df = pd.read_csv("C:/Users/YLS/Documents/clean_test.csv")
 
-# 2. Séparer features et labels
+# 2. Separating labels and features
 X_train = train_df.drop(columns='label')
 y_train = train_df['label'].astype(str)
 
 X_test = test_df.drop(columns='label')
 y_test = test_df['label'].astype(str)
 
-# 3. Normaliser les données (fit uniquement sur train)
+# 3. Normaliszing data
 scaler = MinMaxScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
-# 4. Appliquer SMOTE sur train uniquement
-print("⚖️ Applying SMOTE to balance training data...")
+# 4. Applying SMOTE on training only
+print(" Applying SMOTE to balance training data...")
 smote = SMOTE(random_state=42)
 X_train_smote, y_train_smote = smote.fit_resample(X_train_scaled, y_train)
 
-# 5. Vérifier distribution après SMOTE
-print("✅ Distribution après SMOTE :")
+# 5. Verify distribution after SMOTE
+print(" Distribution after SMOTE :")
 print(pd.Series(y_train_smote).value_counts())
 
-# 6. Convertir en DataFrames et sauvegarder
+# 6. Convert to Dataframes and save
 X_train_smote_df = pd.DataFrame(X_train_smote, columns=X_train.columns)
 X_train_smote_df['label'] = y_train_smote
 
@@ -493,8 +493,8 @@ def run_rf_analysis(train_features, train_labels, test_features, test_labels):
         n_jobs=-1
     )
 
-    print(f"✅ CV AUC Scores: {cv_scores}")
-    print(f"✅ Mean CV AUC: {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}")
+    print(f" CV AUC Scores: {cv_scores}")
+    print(f" Mean CV AUC: {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}")
 
     print("\n Training final model on full training data...")
     rf_final = RandomForestClassifier(
@@ -573,9 +573,9 @@ random_search = RandomizedSearchCV(
 random_search.fit(X_train_smote, y_train_smote)
 
 # Print best params and scores
-print("✅ Best parameters found:")
+print(" Best parameters found:")
 print(random_search.best_params_)
-print(f"✅ Best CV ROC AUC: {random_search.best_score_:.4f}")
+print(f" Best CV ROC AUC: {random_search.best_score_:.4f}")
 
 # Evaluate on test set
 best_model = random_search.best_estimator_
@@ -586,9 +586,9 @@ test_preds = best_model.predict(X_test_scaled)
 auc = roc_auc_score(y_test, test_probs)
 bal_acc = balanced_accuracy_score(y_test, test_preds)
 
-print(f"\n🎯 Test AUC with tuned model: {auc:.4f}")
-print(f"📊 Balanced Accuracy: {bal_acc:.4f}")
-print("\n📝 Classification Report:")
+print(f"\n Test AUC with tuned model: {auc:.4f}")
+print(f" Balanced Accuracy: {bal_acc:.4f}")
+print("\n Classification Report:")
 print(classification_report(y_test, test_preds, target_names=['Control (0)', 'IBD (1)']))
 
 
@@ -603,34 +603,22 @@ from sklearn.inspection import permutation_importance
 import numpy as np
 
 def plot_permutation_importance(model, X_test, y_test, feature_names, top_n=20):
-    """
-    Calcule et trace l'importance des features par permutation.
     
-    Args:
-        model : modèle entraîné (ex. RandomForestClassifier)
-        X_test : array ou DataFrame, données test (features)
-        y_test : array ou Series, labels test
-        feature_names : list, noms des features
-        top_n : int, nombre de features à afficher (par défaut 20)
-        
-    Returns:
-        DataFrame trié des importances
-    """
-    # Calcul de l'importance par permutation (plus long mais fiable)
+    # Calcul permutation importance
     result = permutation_importance(model, X_test, y_test, 
                                   n_repeats=10, 
                                   random_state=42, 
                                   scoring='roc_auc', 
                                   n_jobs=1)
 
-    # Création DataFrame pour tri
+    # Creating dataframe for sort
     importance_df = pd.DataFrame({
         'Feature': feature_names,
         'Importance_mean': result.importances_mean,  # Renommé pour cohérence
         'Importance_std': result.importances_std     # Renommé pour cohérence
     }).sort_values(by='Importance_mean', ascending=False)
 
-    # Plot avec barres d'erreur (écart-type)
+    # Plot 
     top_features = importance_df.head(top_n)
     plt.figure(figsize=(12, 8))
     plt.barh(top_features['Feature'][::-1], 
@@ -642,7 +630,7 @@ def plot_permutation_importance(model, X_test, y_test, feature_names, top_n=20):
     plt.tight_layout()
     plt.show()
 
-    # Affichage des 15 features les plus importantes
+    # showing the top 15 features
     print("\nTop 15 Feature Importances (Mean ± Std Dev):")
     print(importance_df[['Feature', 'Importance_mean', 'Importance_std']]
           .head(15)
@@ -650,7 +638,7 @@ def plot_permutation_importance(model, X_test, y_test, feature_names, top_n=20):
     
     return importance_df
 
-# Exemple d'utilisation avec ton modèle et données test
+# Example of use
 plot_permutation_importance(
     model=model_rf,
     X_test=X_test_scaled,
@@ -691,7 +679,7 @@ def run_xgb_analysis(train_features, train_labels, test_features, test_labels):
     assert isinstance(train_features, np.ndarray), "train_features should be numpy array"
     assert isinstance(test_features, np.ndarray), "test_features should be numpy array"
 
-    print("\n🔁 Performing 5-fold cross-validation (ROC AUC)...")
+    print("\n Performing 5-fold cross-validation (ROC AUC)...")
     xgb_cv = XGBClassifier(
     n_estimators=500,
     max_depth=5,
@@ -711,10 +699,10 @@ def run_xgb_analysis(train_features, train_labels, test_features, test_labels):
         n_jobs=-1
     )
 
-    print(f"✅ CV AUC Scores: {cv_scores}")
-    print(f"✅ Mean CV AUC: {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}")
+    print(f" CV AUC Scores: {cv_scores}")
+    print(f" Mean CV AUC: {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}")
 
-    print("\n🎯 Training final model on full training data...")
+    print("\n Training final model on full training data...")
     xgb_final = XGBClassifier(
     n_estimators=500,
     max_depth=5,
@@ -728,7 +716,7 @@ def run_xgb_analysis(train_features, train_labels, test_features, test_labels):
 
     xgb_final.fit(train_features, train_labels)
 
-    print("\n📊 Evaluating on test set...")
+    print("\n Evaluating on test set...")
     test_preds = xgb_final.predict(test_features)
     test_probs = xgb_final.predict_proba(test_features)[:, 1]
 
@@ -737,7 +725,7 @@ def run_xgb_analysis(train_features, train_labels, test_features, test_labels):
 
     print(f"AUC: {auc:.4f}")
     print(f"Balanced Accuracy: {bal_acc:.4f}")
-    print("\n📝 Classification Report:")
+    print("\n Classification Report:")
     print(classification_report(test_labels, test_preds, target_names=['class 0', 'class 1']))
 
     return xgb_final, test_preds, test_probs
@@ -763,7 +751,7 @@ model_xgb, preds, probs = run_xgb_analysis(
 from xgboost import XGBClassifier
 from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
 
-# Définir l’estimateur de base
+
 xgb = XGBClassifier(
     objective='binary:logistic',
     use_label_encoder=False,
@@ -772,7 +760,7 @@ xgb = XGBClassifier(
     random_state=42
 )
 
-# Dictionnaire des hyperparamètres à explorer
+# hyperparameters
 param_distributions = {
     'n_estimators': [100, 300, 500],
     'learning_rate': [0.01, 0.1, 0.2, 0.3],
@@ -785,7 +773,7 @@ param_distributions = {
     'scale_pos_weight': [1, 2, 3]  # utile pour les classes déséquilibrées
 }
 
-# Validation croisée
+# cross Validation 
 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
 # Randomized Search
@@ -801,14 +789,14 @@ random_search = RandomizedSearchCV(
 )
 y_train = y_train.astype(int)
 
-# Ajustement du modèle (X_train, y_train déjà préparés)
+# Ajusting model (X_train, y_train already prepared)
 random_search.fit(X_train, y_train)
 
-# Meilleurs paramètres
-print("✅ Meilleurs paramètres XGBoost :")
+# Best parameters
+print(" Meilleurs paramètres XGBoost :")
 print(random_search.best_params_)
 
-# Meilleur estimateur
+# Best estimater
 best_xgb_model = random_search.best_estimator_
 
 
@@ -823,19 +811,7 @@ from sklearn.inspection import permutation_importance
 import numpy as np
 
 def plot_permutation_importance_xgb(model, X_test, y_test, feature_names, top_n=20):
-    """
-    Calcule et trace l'importance des features par permutation pour un modèle XGBoost.
-    
-    Args:
-        model : modèle XGBClassifier entraîné
-        X_test : DataFrame ou array, features test
-        y_test : array ou Series, labels test
-        feature_names : list, noms des features (colonnes)
-        top_n : int, nombre de features à afficher (par défaut 20)
-        
-    Returns:
-        DataFrame trié des importances
-    """
+   
     # Workaround for XGBoost compatibility
     if not hasattr(model, 'predict_proba'):
         model.predict_proba = lambda X: model.predict(X, output_margin=False)
@@ -866,7 +842,7 @@ def plot_permutation_importance_xgb(model, X_test, y_test, feature_names, top_n=
     plt.tight_layout()
     plt.show()
 
-    # Affichage des 15 features les plus importantes
+    # Showing the top 15 features
     print("\nTop 15 Feature Importances (Mean ± Std Dev):")
     print(importance_df[['Feature', 'Importance_mean', 'Importance_std']]
           .head(15)
@@ -874,7 +850,7 @@ def plot_permutation_importance_xgb(model, X_test, y_test, feature_names, top_n=
     
     return importance_df
 
-# Exemple d'utilisation (à adapter selon ton jeu de données et modèle)
+# Example of use
 plot_permutation_importance_xgb(
     model=model_xgb,             # ton modèle xgboost entraîné
     X_test=X_test_scaled,        # tes données test (features)
@@ -895,15 +871,13 @@ from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.metrics import roc_auc_score, balanced_accuracy_score, classification_report
 
 def run_lgbm_analysis(train_features, train_labels, test_features, test_labels):
-    """
-    Pipeline LightGBM avec CV 5-fold (AUC ROC), entraînement final, et évaluation test.
-    """
+    
 
-    # Vérification numpy arrays
-    assert isinstance(train_features, np.ndarray), "train_features doit être un numpy array"
-    assert isinstance(test_features, np.ndarray), "test_features doit être un numpy array"
+    # Verifying numpy arrays
+    assert isinstance(train_features, np.ndarray), "train_features should be numpy array"
+    assert isinstance(test_features, np.ndarray), "test_features should be numpy array"
 
-    print("\n🔁 Cross-validation 5-fold (ROC AUC)...")
+    print("\n Cross-validation 5-fold (ROC AUC)...")
     lgbm_clf = lgb.LGBMClassifier(
         n_estimators=700,
         max_depth=8,
@@ -923,10 +897,10 @@ def run_lgbm_analysis(train_features, train_labels, test_features, test_labels):
         n_jobs=-1
     )
 
-    print(f"✅ Scores CV AUC: {cv_scores}")
-    print(f"✅ Moyenne CV AUC: {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}")
+    print(f" Scores CV AUC: {cv_scores}")
+    print(f" Moyenne CV AUC: {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}")
 
-    print("\n🎯 Entraînement du modèle final sur toutes les données d'entraînement...")
+    print("\n Training model")
     lgbm_final = lgb.LGBMClassifier(
         n_estimators=700,
         max_depth=8,
@@ -939,7 +913,7 @@ def run_lgbm_analysis(train_features, train_labels, test_features, test_labels):
 
     lgbm_final.fit(train_features, train_labels)
 
-    print("\n📊 Évaluation sur le jeu de test...")
+    print("\n Evaluation on test")
     test_preds = lgbm_final.predict(test_features)
     test_probs = lgbm_final.predict_proba(test_features)[:, 1]
 
@@ -948,16 +922,16 @@ def run_lgbm_analysis(train_features, train_labels, test_features, test_labels):
 
     print(f"AUC test: {auc:.4f}")
     print(f"Balanced Accuracy test: {bal_acc:.4f}")
-    print("\n📝 Rapport de classification :")
+    print("\n classification report :")
     print(classification_report(test_labels, test_preds, target_names=['class 0', 'class 1']))
 
     return lgbm_final, test_preds, test_probs
 
-# Assure-toi que les labels sont bien des entiers
+# make sure labels are integer
 y_train_smote = y_train_smote.astype(int)
 y_test = y_test.astype(int)
 
-# Exécution de l'analyse LightGBM
+# Running Lightgbm
 model_lgbm, preds_lgbm, probs_lgbm = run_lgbm_analysis(
     train_features=X_train_smote,
     train_labels=y_train_smote,
@@ -980,25 +954,25 @@ lgbm = lgb.LGBMClassifier(random_state=42, n_jobs=-1)
 
 # Grille de recherche pour RandomizedSearchCV
 param_dist = {
-    'num_leaves': np.arange(20, 150, 10),           # nombre de feuilles dans l'arbre
-    'max_depth': np.arange(3, 15, 1),               # profondeur max de l'arbre
-    'learning_rate': np.linspace(0.01, 0.3, 30),   # taux d'apprentissage
-    'n_estimators': np.arange(100, 1000, 100),      # nombre d'arbres
-    'subsample': np.linspace(0.5, 1.0, 6),          # échantillonnage des échantillons (bagging)
-    'colsample_bytree': np.linspace(0.4, 1.0, 7),   # échantillonnage des features
-    'reg_alpha': np.linspace(0, 1.0, 11),            # régularisation L1
-    'reg_lambda': np.linspace(0, 1.0, 11)            # régularisation L2
+    'num_leaves': np.arange(20, 150, 10),           # number of leaves in the tree
+    'max_depth': np.arange(3, 15, 1),               # maximum depth of the tree
+    'learning_rate': np.linspace(0.01, 0.3, 30),   # learning rate
+    'n_estimators': np.arange(100, 1000, 100),      # number of trees
+    'subsample': np.linspace(0.5, 1.0, 6),          # sample sampling (bagging)
+    'colsample_bytree': np.linspace(0.4, 1.0, 7),   # feature sampling
+    'reg_alpha': np.linspace(0, 1.0, 11),            # regularisation L1
+    'reg_lambda': np.linspace(0, 1.0, 11)            # regularisation L2
 }
 
-# Stratified K-Fold CV pour classification binaire
+# Stratified K-Fold CV for binary classification 
 cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
 # RandomizedSearchCV
 random_search = RandomizedSearchCV(
     estimator=lgbm,
     param_distributions=param_dist,
-    n_iter=50,                    # nombre d'itérations (param combos testés)
-    scoring='roc_auc',            # critère d'optimisation
+    n_iter=50,                    # number of iterations
+    scoring='roc_auc',            
     cv=cv,
     verbose=2,
     random_state=42,
@@ -1006,18 +980,18 @@ random_search = RandomizedSearchCV(
     refit=True
 )
 
-# Assure-toi que tes labels sont bien des int
+# make sure labels are int
 y_train_smote = y_train_smote.astype(int)
 
-# Lancement de la recherche
+
 random_search.fit(X_train_smote, y_train_smote)
 
-# Affichage des meilleurs paramètres et score
-print("✅ Meilleurs paramètres LightGBM :")
+# Best parameters and score
+print("Best parameters of LightGBM :")
 print(random_search.best_params_)
-print(f"✅ Meilleur score CV AUC : {random_search.best_score_:.4f}")
+print(f"Best score score CV AUC : {random_search.best_score_:.4f}")
 
-# Le meilleur modèle est accessible par
+
 best_lgbm_model = random_search.best_estimator_
 
 
@@ -1033,22 +1007,22 @@ import numpy as np
 
 def plot_permutation_importance_lgbm(model, X_test, y_test, feature_names, top_n=20):
     """
-    Calcule et trace l'importance des features par permutation pour LightGBM.
+    calculate featurepermutation importance with  LightGBM.
     
     Args:
-        model : modèle LightGBM entraîné
-        X_test : numpy array ou DataFrame, features test
+        model :  LightGBM 
+        X_test : numpy array or DataFrame, features test
         y_test : labels test
-        feature_names : list, noms des features (obligatoire, sinon erreur)
-        top_n : nombre de features à afficher
+        feature_names : list,  features names (obligatoiry)
+        top_n : number of features
         
     Returns:
-        DataFrame trié des importances
+        DataFrame sorted of importance
     """
     if feature_names is None:
         raise ValueError("feature_names must be provided as a list of feature names.")
 
-    # Calcul de l'importance par permutation
+    # Calculating permutation importance
     result = permutation_importance(
         model, X_test, y_test,
         n_repeats=10,
@@ -1057,7 +1031,7 @@ def plot_permutation_importance_lgbm(model, X_test, y_test, feature_names, top_n
         n_jobs=-1
     )
 
-    # Création du DataFrame
+    # Creating dataframe
     importance_df = pd.DataFrame({
         'Feature': feature_names,
         'Importance_mean': result.importances_mean,  # Renommé pour cohérence
@@ -1078,7 +1052,7 @@ def plot_permutation_importance_lgbm(model, X_test, y_test, feature_names, top_n
     plt.tight_layout()
     plt.show()
 
-    # Affichage des 15 features les plus importantes
+    # the top 15 features
     print("\nTop 15 Feature Importances (Mean ± Std Dev):")
     print(importance_df[['Feature', 'Importance_mean', 'Importance_std']]
           .head(15)
@@ -1087,7 +1061,7 @@ def plot_permutation_importance_lgbm(model, X_test, y_test, feature_names, top_n
     return importance_df
 
 
-# Exemple d'utilisation avec tes variables LightGBM
+# Example of use
 feature_names = X_test.columns.tolist()  # Récupère les noms des colonnes AVANT transformation
 
 plot_permutation_importance_lgbm(
@@ -1130,13 +1104,13 @@ def run_catboost_analysis(train_features, train_labels, test_features, test_labe
         cv=cv, scoring='roc_auc', n_jobs=-1
     )
 
-    print(f"✅ CV AUC Scores: {cv_scores}")
-    print(f"✅ Mean CV AUC: {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}")
+    print(f" CV AUC Scores: {cv_scores}")
+    print(f" Mean CV AUC: {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}")
 
-    print("\n🎯 Training final model on full training data...")
+    print("\n Training final model on full training data...")
     catboost_model.fit(train_features, train_labels, verbose=0)
 
-    print("\n📊 Evaluating on test set...")
+    print("\n Evaluating on test set...")
     test_preds = catboost_model.predict(test_features)
     test_probs = catboost_model.predict_proba(test_features)[:, 1]
 
@@ -1145,15 +1119,15 @@ def run_catboost_analysis(train_features, train_labels, test_features, test_labe
 
     print(f"AUC: {auc:.4f}")
     print(f"Balanced Accuracy: {bal_acc:.4f}")
-    print("\n📝 Classification Report:")
+    print("\n Classification Report:")
     print(classification_report(test_labels, test_preds, target_names=['class 0', 'class 1']))
 
     return catboost_model, test_preds, test_probs
-# Assure-toi que y_train_smote et y_test sont bien en entier
+
 y_train_smote = y_train_smote.astype(int)
 y_test = y_test.astype(int)
 
-# Entraînement + évaluation
+# Training and test
 model_catboost, preds_cat, probs_cat = run_catboost_analysis(
     train_features=X_train_smote,
     train_labels=y_train_smote,
@@ -1174,22 +1148,23 @@ from sklearn.inspection import permutation_importance
 
 def plot_permutation_importance_catboost(model, X_test, y_test, feature_names, top_n=20):
     """
-    Affiche les top_n features les plus importantes via permutation importance pour un modèle CatBoost.
+    Displays the top_n most important features using permutation importance for a CatBoost model.
 
     Args:
-        model : modèle CatBoost entraîné
-        X_test : données de test (numpy array)
-        y_test : labels test (array-like)
-        feature_names : liste des noms des features
-        top_n : nombre de features à afficher (default 20)
+        model : trained CatBoost model
+        X_test : test data (numpy array)
+        y_test : test labels (array-like)
+        feature_names : list of feature names
+        top_n : number of features to display (default 20)
         
     Returns:
-        DataFrame trié des importances
+        Sorted DataFrame of feature importances
     """
+
     if not isinstance(feature_names, list) or len(feature_names) != X_test.shape[1]:
         raise ValueError("feature_names must be a list with length equal to number of features in X_test.")
 
-    # Importance par permutation
+    # permutation importance
     result = permutation_importance(
         model, X_test, y_test,
         n_repeats=10,
@@ -1198,7 +1173,7 @@ def plot_permutation_importance_catboost(model, X_test, y_test, feature_names, t
         n_jobs=-1
     )
 
-    # DataFrame des importances
+    # DataFrame of importances
     importance_df = pd.DataFrame({
         'Feature': feature_names,
         'Importance_mean': result.importances_mean,  # Changed for consistency
@@ -1227,12 +1202,12 @@ def plot_permutation_importance_catboost(model, X_test, y_test, feature_names, t
     
     return importance_df
 
-# Exemple d'utilisation
+# Example
 plot_permutation_importance_catboost(
-    model=model_catboost,             # ton modèle entraîné
+    model=model_catboost,             # your trained model
     X_test=X_test_scaled,             # ndarray
-    y_test=y_test,                    # ndarray ou Series
-    feature_names=feature_names,      # liste des noms de colonnes
+    y_test=y_test,                    # ndarray or Series
+    feature_names=feature_names,      # list of names of colonnes
     top_n=20
 )
 
@@ -1249,20 +1224,20 @@ from sklearn.metrics import roc_auc_score, balanced_accuracy_score, classificati
 
 def run_svm_analysis(train_features, train_labels, test_features, test_labels):
     """
-    Pipeline SVM avec 5-fold CV (ROC AUC), entraînement final et évaluation.
+    Pipeline SVM avec 5-fold CV (ROC AUC), final training and evaluation.
     """
 
-    # Vérifications
-    assert isinstance(train_features, np.ndarray), "train_features doit être un numpy array"
-    assert isinstance(test_features, np.ndarray), "test_features doit être un numpy array"
+    # Verifications
+    assert isinstance(train_features, np.ndarray), "train_features should be numpy array"
+    assert isinstance(test_features, np.ndarray), "test_features should be numpy array"
 
-    print("\n🔁 5-fold Cross-validation (ROC AUC) avec SVM...")
+    print("\n 5-fold Cross-validation (ROC AUC) with SVM...")
 
     svm_model = SVC(
         kernel='rbf',
         C=1.0,
         gamma='scale',
-        probability=True,   # Pour pouvoir utiliser predict_proba
+        probability=True,   # to be able to use predict_proba
         random_state=42
     )
 
@@ -1275,13 +1250,13 @@ def run_svm_analysis(train_features, train_labels, test_features, test_labels):
         n_jobs=-1
     )
 
-    print(f"✅ AUC CV scores : {cv_scores}")
-    print(f"✅ Moyenne AUC CV : {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}")
+    print(f" AUC CV scores : {cv_scores}")
+    print(f" Moyenne AUC CV : {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}")
 
-    print("\n🎯 Entraînement sur tout le training set...")
+    print("\n Entraînement sur tout le training set...")
     svm_model.fit(train_features, train_labels)
 
-    print("\n📊 Évaluation sur le test set...")
+    print("\n Évaluation sur le test set...")
     test_preds = svm_model.predict(test_features)
     test_probs = svm_model.predict_proba(test_features)[:, 1]
 
@@ -1290,7 +1265,7 @@ def run_svm_analysis(train_features, train_labels, test_features, test_labels):
 
     print(f"AUC: {auc:.4f}")
     print(f"Balanced Accuracy: {bal_acc:.4f}")
-    print("\n📝 Classification Report:")
+    print("\n Classification Report:")
     print(classification_report(test_labels, test_preds, target_names=['Class 0', 'Class 1']))
 
     return svm_model, test_preds, test_probs
@@ -1317,23 +1292,24 @@ from sklearn.inspection import permutation_importance
 
 def plot_permutation_importance_svm(model, X_test, y_test, feature_names, top_n=20):
     """
-    Calcule et trace l'importance des features par permutation pour un modèle SVM.
+    Computes and plots feature importance using permutation for an SVM model.
     
     Args:
-        model : SVC entraîné (avec probability=True)
-        X_test : array ou DataFrame, données test
-        y_test : array, labels test
-        feature_names : list, noms des features
-        top_n : nombre de features à afficher
+        model : trained SVC (with probability=True)
+        X_test : array or DataFrame, test data
+        y_test : array, test labels
+        feature_names : list, names of the features
+        top_n : number of features to display
         
     Returns:
-        DataFrame trié des importances
-    """
-    # Vérification
+        Sorted DataFrame of feature importances
+   """
+
+    # Verification
     if isinstance(X_test, np.ndarray) and isinstance(feature_names, list):
         assert X_test.shape[1] == len(feature_names), "Feature names length must match X_test.shape[1]"
 
-    # Importance par permutation
+    # permutation importance
     result = permutation_importance(
         model, X_test, y_test,
         n_repeats=10,
@@ -1342,14 +1318,14 @@ def plot_permutation_importance_svm(model, X_test, y_test, feature_names, top_n=
         n_jobs=-1
     )
 
-    # DataFrame trié
+    # DataFrame sorted
     importance_df = pd.DataFrame({
         'Feature': feature_names,
         'Importance_mean': result.importances_mean,  # Renommé pour cohérence
         'Importance_std': result.importances_std    # Renommé pour cohérence
     }).sort_values(by='Importance_mean', ascending=False)
 
-    # Affichage graphique (top_n features)
+    # plot of top 15 features
     top_features = importance_df.head(top_n)
     plt.figure(figsize=(12, 8))
     plt.barh(top_features['Feature'][::-1],
@@ -1361,7 +1337,7 @@ def plot_permutation_importance_svm(model, X_test, y_test, feature_names, top_n=
     plt.tight_layout()
     plt.show()
 
-    # Affichage texte (top 15 features)
+    # top 15 features printed
     print("\nTop 15 Feature Importances (Mean ± Std Dev):")
     print(importance_df[['Feature', 'Importance_mean', 'Importance_std']]
           .head(15)
@@ -1369,7 +1345,7 @@ def plot_permutation_importance_svm(model, X_test, y_test, feature_names, top_n=
     
     return importance_df
 
-# Exemple d'utilisation
+# Example
 top_svm_features = plot_permutation_importance_svm(
     model=model_svm,
     X_test=X_test_scaled,         # ton X après scaling (numpy array)
@@ -1402,10 +1378,10 @@ def run_knn(train_features, train_labels, test_features, test_labels, n_neighbor
     print("🔁 5-fold CV (ROC AUC)...")
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     cv_scores = cross_val_score(model_knn, train_features, train_labels, cv=cv, scoring='roc_auc')
-    print(f"✅ CV AUC scores: {cv_scores}")
-    print(f"✅ Mean CV AUC: {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}")
+    print(f" CV AUC scores: {cv_scores}")
+    print(f" Mean CV AUC: {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}")
 
-    print("📊 Training final model...")
+    print(" Training final model...")
     model_knn.fit(train_features, train_labels)
 
     test_preds = model_knn.predict(test_features)
@@ -1414,9 +1390,9 @@ def run_knn(train_features, train_labels, test_features, test_labels, n_neighbor
     auc = roc_auc_score(test_labels, test_probs)
     bal_acc = balanced_accuracy_score(test_labels, test_preds)
 
-    print(f"🎯 Test AUC: {auc:.4f}")
-    print(f"🎯 Test Balanced Accuracy: {bal_acc:.4f}")
-    print("\n📝 Classification Report:")
+    print(f" Test AUC: {auc:.4f}")
+    print(f" Test Balanced Accuracy: {bal_acc:.4f}")
+    print("\n Classification Report:")
     print(classification_report(test_labels, test_preds))
 
     return model_knn
@@ -1492,33 +1468,34 @@ from sklearn.metrics import roc_auc_score, balanced_accuracy_score, classificati
 
 def run_naive_bayes_analysis_cv(train_features, train_labels, test_features, test_labels):
     """
-    Pipeline Naive Bayes avec 5-fold CV (ROC AUC), entraînement final, et évaluation test.
+    Naive Bayes pipeline with 5-fold CV (ROC AUC), final training, and test evaluation.
     
     Args:
-        train_features : array ou DataFrame, features d'entraînement
-        train_labels : array ou Series, labels d'entraînement
-        test_features : array ou DataFrame, features test
-        test_labels : array ou Series, labels test
+        train_features : array or DataFrame, training features
+        train_labels : array or Series, training labels
+        test_features : array or DataFrame, test features
+        test_labels : array or Series, test labels
         
     Returns:
-        model : modèle Naive Bayes entraîné sur tout train
-        test_preds : prédictions classes sur test
-        test_probs : probabilités classe 1 sur test
+        model : Naive Bayes model trained on the full training set
+        test_preds : class predictions on the test set
+        test_probs : class 1 probabilities on the test set
     """
+
 
     model = GaussianNB()
 
-    print("\n🔁 5-fold cross-validation (ROC AUC) sur train...")
+    print("\n 5-fold cross-validation (ROC AUC) sur train...")
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     cv_scores = cross_val_score(model, train_features, train_labels,
                                 cv=cv, scoring='roc_auc', n_jobs=-1)
-    print(f"✅ CV AUC scores: {cv_scores}")
-    print(f"✅ Mean CV AUC: {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}")
+    print(f" CV AUC scores: {cv_scores}")
+    print(f" Mean CV AUC: {np.mean(cv_scores):.4f} ± {np.std(cv_scores):.4f}")
 
-    print("\n🎯 Entraînement final sur tout le train...")
+    print("\n Entraînement final sur tout le train...")
     model.fit(train_features, train_labels)
 
-    print("\n📊 Évaluation sur test...")
+    print("\n Évaluation sur test...")
     test_preds = model.predict(test_features)
     test_probs = model.predict_proba(test_features)[:, 1]
 
@@ -1527,13 +1504,13 @@ def run_naive_bayes_analysis_cv(train_features, train_labels, test_features, tes
 
     print(f"AUC: {auc:.4f}")
     print(f"Balanced Accuracy: {bal_acc:.4f}")
-    print("\n📝 Classification Report:")
+    print("\n Classification Report:")
     print(classification_report(test_labels, test_preds, target_names=['class 0', 'class 1']))
 
     return model, test_preds, test_probs
 
 
-# Exemple d'utilisation
+# Example
 model_nb, preds_nb, probs_nb = run_naive_bayes_analysis_cv(
     train_features=X_train_smote,
     train_labels=y_train_smote,
@@ -1663,8 +1640,9 @@ import matplotlib.pyplot as plt
 
 def find_best_threshold(y_true, y_probs, metric='f1'):
     """
-    Trouve le seuil optimal pour maximiser une métrique (f1, balanced_accuracy, etc.)
+    Finds the optimal threshold to maximize a given metric (f1, balanced_accuracy, etc.)
     """
+
     best_thresh = 0.5
     best_score = 0
     thresholds = np.linspace(0, 1, 101)
@@ -1682,31 +1660,31 @@ def find_best_threshold(y_true, y_probs, metric='f1'):
             best_thresh = thresh
     return best_thresh, best_score
 
-# --- Supposons que tu as déjà :
-# model (modèle entraîné)
-# X_test_scaled (données test)
-# y_test (labels test)
+# --- Assume you already have:
+# model (trained model)
+# X_test_scaled (test data)
+# y_test (test labels)
 # test_probs = model.predict_proba(X_test_scaled)[:,1]
 
-# Ici, selon ton output, on fixe le seuil optimal trouvé
+# Set the optimal threshold found (e.g., via F1 maximization)
 best_threshold = 0.59
 
-# Prédictions selon ce seuil
+# Predictions using this threshold
 test_probs = model.predict_proba(X_test_scaled)[:, 1]
 test_preds_opt = (test_probs >= best_threshold).astype(int)
 
-# Calcul des métriques
+# Compute metrics
 auc = roc_auc_score(y_test, test_probs)
 bal_acc = balanced_accuracy_score(y_test, test_preds_opt)
 
-print(f"Seuil optimal pour max F1-score : {best_threshold:.2f}")
+print(f"Optimal threshold for max F1-score: {best_threshold:.2f}")
 print(f"Test AUC: {auc:.4f}")
-print(f"Test Balanced Accuracy (seuil optimisé): {bal_acc:.4f}\n")
+print(f"Test Balanced Accuracy (optimized threshold): {bal_acc:.4f}\n")
 
-print("Classification Report (seuil optimisé) :")
+print("Classification Report (optimized threshold):")
 print(classification_report(y_test, test_preds_opt, target_names=['class 0', 'class 1']))
 
-# Optionnel : courbe ROC
+# Optional: ROC curve
 from sklearn.metrics import roc_curve
 fpr, tpr, _ = roc_curve(y_test, test_probs)
 plt.figure(figsize=(8,6))
@@ -1967,26 +1945,27 @@ import torch
 
 def permutation_importance_fnn(model, X_test, y_test, feature_names, device,
                                metric=roc_auc_score, n_repeats=10, top_n=20):
-    """
-    Calcule l'importance permutationnelle des features pour un modèle FNN PyTorch.
+   """
+    Computes permutation feature importance for a PyTorch FNN model.
     
     Args:
-        model: modèle FNN entraîné (mode eval)
-        X_test: numpy array, données test (scaled)
-        y_test: array, labels test
-        feature_names: list, noms des features
-        device: torch.device ('cpu' ou 'cuda')
-        metric: fonction métrique à maximiser (ex: roc_auc_score)
-        n_repeats: int, nombre de permutations répétées par feature
-        top_n: int, nombre de features à afficher
+        model: trained FNN model (in eval mode)
+        X_test: numpy array, test data (scaled)
+        y_test: array, test labels
+        feature_names: list, names of the features
+        device: torch.device ('cpu' or 'cuda')
+        metric: metric function to maximize (e.g., roc_auc_score)
+        n_repeats: int, number of permutation repeats per feature
+        top_n: int, number of top features to display
     
-    Retourne:
-        DataFrame trié des importances moyennes et std, top_n features
-    """
+    Returns:
+        DataFrame sorted by mean and std of importances, top_n features
+   """
+
     
     model.eval()
     
-    # Prédiction de base (pas de permutation)
+    # Base prediction (without permutation)
     with torch.no_grad():
         inputs = torch.tensor(X_test, dtype=torch.float32).to(device)
         base_preds = model(inputs).cpu().numpy().flatten()
@@ -1999,7 +1978,7 @@ def permutation_importance_fnn(model, X_test, y_test, feature_names, device,
         X_test_permuted = X_test.copy()
         
         for _ in range(n_repeats):
-            # Permuter la colonne i
+            # Permutate colonne i
             np.random.shuffle(X_test_permuted[:, i])
             
             with torch.no_grad():
@@ -2007,9 +1986,9 @@ def permutation_importance_fnn(model, X_test, y_test, feature_names, device,
                 preds_perm = model(inputs_perm).cpu().numpy().flatten()
             
             score_perm = metric(y_test, preds_perm)
-            scores.append(base_score - score_perm)  # perte de performance = importance
+            scores.append(base_score - score_perm)  # performance drop = importance
             
-            # Remettre la colonne à la normale pour prochaine répétition
+            # Restore the column to its original state for the next repeat
             X_test_permuted[:, i] = X_test[:, i]
         
         importances.append({
@@ -2036,11 +2015,11 @@ def permutation_importance_fnn(model, X_test, y_test, feature_names, device,
 
 # --- Usage ---
 
-# Assure-toi que :
-# model_fnn est ton modèle FNN entraîné et passé en mode eval()
-# X_test_scaled est un numpy array (scaled)
-# y_test est array labels
-# feature_names est la liste des noms des features correspondants
+# Make sure that:
+# model_fnn is your trained FNN model set to eval() mode
+# X_test_scaled is a numpy array (scaled)
+# y_test is an array of labels
+# feature_names is the list of corresponding feature names
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model_fnn.eval()
@@ -2235,7 +2214,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import roc_auc_score, balanced_accuracy_score, classification_report
 
-# Définition du modèle RNN simple
+# model definition
 class RNN(nn.Module):
     def __init__(self, input_dim, hidden_dim=64, num_layers=1, dropout=0.3):
         super(RNN, self).__init__()
@@ -2250,7 +2229,7 @@ class RNN(nn.Module):
         out = self.fc(out)
         return self.sigmoid(out)
 
-# Fonction de cross-validation avec affichage métriques
+# Cross-validation function with metric display
 def cross_validate_rnn(X, y, n_splits=5, batch_size=32, epochs=30, lr=0.001):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
@@ -2265,13 +2244,13 @@ def cross_validate_rnn(X, y, n_splits=5, batch_size=32, epochs=30, lr=0.001):
         X_train, X_val = X[train_idx], X[val_idx]
         y_train, y_val = y[train_idx], y[val_idx]
         
-        # Si y est un pd.Series, convertir en numpy array
+        # If y is a pd.Series, convert to numpy array
         if hasattr(y_train, 'values'):
             y_train = y_train.values
         if hasattr(y_val, 'values'):
             y_val = y_val.values
         
-        # Conversion en tenseurs PyTorch, ajout dim temporelle (seq_len=1)
+        # Convert to PyTorch tensors, add temporal dimension (seq_len=1)
         X_train_t = torch.tensor(X_train, dtype=torch.float32).unsqueeze(1)
         y_train_t = torch.tensor(y_train, dtype=torch.long)
         X_val_t = torch.tensor(X_val, dtype=torch.float32).unsqueeze(1)
@@ -2300,7 +2279,7 @@ def cross_validate_rnn(X, y, n_splits=5, batch_size=32, epochs=30, lr=0.001):
                 running_loss += loss.item() * inputs.size(0)
             print(f"Epoch {epoch+1}/{epochs} - Loss: {running_loss / len(train_loader.dataset):.4f}")
         
-        # Évaluation sur validation
+        # Evaluation on validation set
         model.eval()
         preds = []
         true_labels = []
@@ -2325,13 +2304,13 @@ def cross_validate_rnn(X, y, n_splits=5, batch_size=32, epochs=30, lr=0.001):
         
         fold += 1
     
-    print("\n--- Résumé Cross-validation ---")
+    print("\n--- Summary Cross-validation ---")
     print(f"AUC moyen: {np.mean(auc_scores):.4f} ± {np.std(auc_scores):.4f}")
     print(f"Balanced Accuracy moyen: {np.mean(bal_acc_scores):.4f} ± {np.std(bal_acc_scores):.4f}")
     
     return auc_scores, bal_acc_scores
 
-# Entraînement final + évaluation test
+# Final training + test evaluation
 def train_final_rnn(X_train, y_train, X_test, y_test, epochs=30, batch_size=32, lr=0.001):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -2368,7 +2347,7 @@ def train_final_rnn(X_train, y_train, X_test, y_test, epochs=30, batch_size=32, 
             running_loss += loss.item() * inputs.size(0)
         print(f"Epoch {epoch+1}/{epochs} - Loss: {running_loss / len(train_loader.dataset):.4f}")
     
-    # Évaluation finale sur test
+    # Final evaluation on test set
     model.eval()
     preds = []
     true_labels = []
@@ -2390,15 +2369,15 @@ def train_final_rnn(X_train, y_train, X_test, y_test, epochs=30, batch_size=32, 
     
     return model
 
-# --- Exemple d’utilisation ---
-# Supposons que tu as déjà tes données :
-# X_train_smote, y_train_smote (après SMOTE)
+# --- Example usage ---
+# Assume you already have your data:
+# X_train_smote, y_train_smote (after SMOTE)
 # X_test_scaled, y_test
 
 # Cross-validation
 auc_scores, bal_acc_scores = cross_validate_rnn(X_train_smote, y_train_smote, n_splits=5, epochs=20)
 
-# Entraînement final + test
+# Final training + test evaluation
 model_final = train_final_rnn(X_train_smote, y_train_smote, X_test_scaled, y_test, epochs=20)
 
 
@@ -2416,21 +2395,22 @@ import torch
 def permutation_importance_rnn(model, X_test, y_test, feature_names, device,
                                metric=roc_auc_score, n_repeats=10, top_n=20):
     """
-    Calcule l'importance des features par permutation pour un modèle RNN.
+    Computes permutation feature importance for an RNN model.
     
     Args:
-        model: modèle RNN entraîné (mode eval)
-        X_test: np.array, forme (N_samples, N_features)
-        y_test: array-like, labels binaires
-        feature_names: liste des noms des features
+        model: trained RNN model (in eval mode)
+        X_test: np.array, shape (N_samples, N_features)
+        y_test: array-like, binary labels
+        feature_names: list of feature names
         device: torch.device
-        metric: métrique d’évaluation (ex: roc_auc_score)
-        n_repeats: nb de permutations par feature
-        top_n: nombre de features à afficher
+        metric: evaluation metric (e.g., roc_auc_score)
+        n_repeats: number of permutations per feature
+        top_n: number of top features to display
     
     Returns:
-        DataFrame trié des importances moyennes et std
+        DataFrame sorted by mean and std of feature importances
     """
+
     model.eval()
     
     # Base prediction
@@ -2771,7 +2751,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Dictionnaire contenant les importances moyennes pour chaque modèle
+# Dictionary containing the mean importances for each model
 importance_dict = {
     'RNN': {
         'Bacteroides': 0.017180, 'Parabacteroides': 0.013589, 'Dialister': 0.012058,
@@ -2838,7 +2818,7 @@ importance_dict = {
     }
 }
 
-# Convertir le dictionnaire en DataFrame
+# Convert the dictionary into a DataFrame
 df_list = []
 for model, features in importance_dict.items():
     for feature, importance in features.items():
@@ -2846,14 +2826,15 @@ for model, features in importance_dict.items():
 
 df = pd.DataFrame(df_list)
 
-# Pivot table pour la heatmap
+# Pivote table for heatmap
 pivot_df = df.pivot_table(index='Feature', columns='Model', values='Importance', fill_value=0)
 
-# Tri des caractéristiques selon leur importance moyenne globale
+# Sort features by their overall mean importance
 feature_order = pivot_df.mean(axis=1).sort_values(ascending=False).index
 pivot_df = pivot_df.loc[feature_order]
 
-# Tracer la heatmap
+# Plot the heatmap
+
 plt.figure(figsize=(14, 20))
 sns.heatmap(pivot_df, cmap="YlGnBu", linewidths=0.3, linecolor='gray')
 plt.xlabel("Model")
@@ -2901,7 +2882,7 @@ def set_labels_text(venn_obj, sets, fontsize=1.5):
             selected_sets = [sets[i] for i, bit in enumerate(subset) if bit == '1']
             intersection = set.intersection(*selected_sets)
             label.set_text("\n".join(intersection))
-            label.set_fontsize(fontsize)  # ici on définit la taille de la police
+            label.set_fontsize(fontsize)  # Here we set the font size
 
 set_labels_text(venn, [rf_features, xgb_features, lgbm_features], fontsize=7)
 
@@ -2977,21 +2958,21 @@ features_dict = {
 
 all_features = set().union(*features_dict.values())
 
-# DataFrame features x modèles, booléen si feature dans modèle
+# DataFrame features x models, boolean if feature is in model
 df = pd.DataFrame({
     model: [feature in features_dict[model] for feature in all_features]
     for model in features_dict
 }, index=list(all_features))
 
-# On doit convertir ce df en un DataFrame où chaque ligne est une feature
-# avec colonnes booléennes, et on passe ce df à upsetplot (MultiIndex booléen)
-# Mais upsetplot veut que l'index soit ce MultiIndex, donc :
+# We need to convert this df into a DataFrame where each row is a feature
+# with boolean columns, and pass this df to upsetplot (boolean MultiIndex)
+# But upsetplot requires the index to be this MultiIndex, so:
 df_bool = df.astype(bool)
 
-# On transforme le DataFrame en MultiIndex booléen
+# Convert the DataFrame into a boolean MultiIndex
 multi_index = pd.MultiIndex.from_frame(df_bool)
 
-# Créer un DataFrame avec cet index et une colonne 'count' = 1 pour chaque feature
+# Create a DataFrame with this index and a 'count' column = 1 for each feature
 df_for_upset = pd.DataFrame({'count': 1}, index=multi_index)
 
 from upsetplot import UpSet
