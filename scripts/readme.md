@@ -18,5 +18,7 @@ This repository contains a set of scripts for processing 16S rRNA microbiome dat
 - **Purpose:** Standardize and rename taxa in the tables produced by Script 2 for consistent downstream analysis.
 
 ## Usage Notes
-- Ensure that all input files (e.g., `1359accessions.txt`) are correctly formatted before running Script 1.  
-- Scripts should be run sequentially: **Script 1 → Script 2 → Script 3**.  
+- Ensure that all input files (e.g., `1359accessions.txt`) are correctly formatted before running Scripts.  
+- Scripts should be run sequentially: **Script 1 → Script 2 → Script 3**.
+- Metadata file can be found in public databases too, and serves to differentiate between patients and controls (to know each accession number if it patient or control)
+- All the inputs used in these scripts can be found in inputs repository
